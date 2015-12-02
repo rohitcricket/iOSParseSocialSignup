@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import Parse
+import Bolts
 
 class SignUpViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -61,6 +63,7 @@ class SignUpViewController: UIViewController, UIImagePickerControllerDelegate, U
         }
         
         if (userPass != userPassRepeat){
+            
             var myAlert = UIAlertController(title: "Alert", message: "Passwords do not match. Please try again.", preferredStyle: UIAlertControllerStyle.Alert)
             let okAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil)
             myAlert.addAction(okAction)
@@ -70,14 +73,46 @@ class SignUpViewController: UIViewController, UIImagePickerControllerDelegate, U
             return
         }
         
+        // create object to send to Parse
+        
+        let myUser:PFUser = PFUser()
+        myUser.username = userName
+        myUser.password = userPass
+        myUser.email = userName
+        
+        myUser.setObject(userFirstName, forKey: "first_name")
+        myUser.setObject(userLastName, forKey: "last_name")
+        
         let profileImageData = UIImageJPEGRepresentation(profileImg.image!, 1)
+       
         if (profileImageData != nil) {
-            // create object to send to Parse
             
-            let myUser:PFUser = PFUser()
-            let myUser.username = userName
-            let myUser.password = userPass
-            let myUSer.email = userName
+            let profileImageFile = PFFile(data: profileImageData!)
+            myUser.setObject(profileImageFile!, forKey: "profile_picture")
+            
+        }
+        
+        myUser.signUpInBackgroundWithBlock { (success: Bool, error: NSError?) -> Void in
+            
+            var userMessage = "Registration is successful. Thank you!"
+            
+            if (!success) {
+               // userMessage = "Could not register at this time. Please try later"
+                userMessage = error!.localizedDescription
+            }
+            
+            var myAlert = UIAlertController(title: "Alert", message: "Passwords do not match. Please try again.", preferredStyle: UIAlertControllerStyle.Alert)
+            let okAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default){ action in
+                
+                if(success) {
+                    self.dismissViewControllerAnimated(true, completion: nil)
+                }
+            }
+            myAlert.addAction(okAction)
+            
+            self.presentViewController(myAlert, animated: true, completion: nil)
+            
+            return
             
         }
         
